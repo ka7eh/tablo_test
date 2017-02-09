@@ -1,0 +1,99 @@
+<ul>
+    {% for ds in datasets %}
+        <li>
+            <dl>Name:</dl>
+            <dd class="tableName">{{ ds.name }}</dd>
+            <dl>SRID:</dl>
+            <dd class="srid">{{ ds.srid }}</dd>
+            <dl>Geom type:</dl>
+            <dd class="geomType">{{ ds.geom_type }}</dd>
+            <dl></dl>
+            <dd>
+                {% if ds.feature_service %}
+                    <a href="{% url 'fs_arcgis_featureservice' ds.feature_service %}" target="_blank">Feature
+                        Service</a>
+                {% else %}
+                    <button onclick="deploy(this.parentElement.parentElement)">Make Feature Service</button>
+                {% endif %}
+            </dd>
+            <hr>
+        </li>
+    {% endfor %}
+</ul>
+
+
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"
+        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+        crossorigin="anonymous"></script>
+<script>
+    $.ajaxSetup({
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'ApiKey kaveh:secret1234');
+        }
+    });
+
+    function deploy(row) {
+        var geomTypeRaw = $('.geomType', row).text();
+        var tableName = $('.tableName', row).text();
+        var srid = $('.srid', row).text();
+        var geomType, symbol;
+
+        switch (geomTypeRaw) {
+            case 'POINT':
+            case 'MULTIPOINT':
+                geomType = "esriGeometryPoint";
+                symbol = {"type": "esriSMS","style": "esriSMSCircle","color": [255, 0, 0, 255],"yoffset": 0,"xoffset": 0,"size": 5,"angle": 0};
+                break;
+            case 'LINESTRING':
+            case 'MULTILINESTRING':
+                geomType = "esriGeometryPolyline";
+                symbol = {"type": "esriSLS", "style": "esriSLSSolid", "color": [165, 83, 183, 255], "width": 1};
+                break;
+            case 'POLYGON':
+            case 'MULTIPOLYGON':
+                geomType = "esriGeometryPolygon";
+                symbol = {"type": "esriSFS", "style": "esriSFSSolid", "color": [165, 83, 183, 255], "outline": {"type": "esriSLS", "style": "esriSLSSolid", "color": [0, 0, 0, 255], "width": 4}};
+                break;
+        }
+
+        $.ajax({
+            url: '/api/v1/featureservice/',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "description": "",
+                "copyright_text": "",
+                "spatial_reference": JSON.stringify({"wkid": srid}),
+                "units": "esriMeters",
+                "allow_geometry_updates": false,
+                "layers": [
+                    {
+                        "layer_order": 0,
+                        "table": tableName,
+                        "name": "layername",
+                        "description": null,
+                        "geometry_type": geomType,
+                        "supports_time": false,
+                        "start_time_field": null,
+                        "time_interval": 0,
+                        "time_interval_units": null,
+                        "drawing_info": JSON.stringify({
+                            "renderer": {
+                                "description": "",
+                                "label": "",
+                                "symbol": symbol,
+                                "type": "simple"
+                            }
+                        })
+                    }
+                ]
+            }),
+            success: function (data, status, xhr) {
+                var location = xhr.getResponseHeader('Location');
+                $.get(xhr.getResponseHeader('Location') + 'finalize', function () {
+                    console.log(location)
+                });
+            }
+        })
+    }
+</script>

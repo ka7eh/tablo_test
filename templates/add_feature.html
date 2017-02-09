@@ -1,0 +1,173 @@
+{% load static %}
+<button onclick="addFeature('point')">Add point</button>
+<button onclick="addFeature('line')">Add line</button>
+<button onclick="addFeature('polygon')">Add polygon</button>
+<br/><br/>
+<button onclick="updateFeature('point')">Update point</button>
+<button onclick="updateFeature('line')">Update line</button>
+<button onclick="updateFeature('polygon')">Update polygon</button>
+
+
+<script src="{% static 'jquery.min.js' %}"></script>
+<script>
+    $.ajaxSetup({
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'ApiKey api_user:secret1234');
+        }
+    });
+
+    function addFeature(featureType) {
+        var data, db_id;
+
+        switch (featureType) {
+            case 'point':
+                db_id = 1081;
+                data = [{
+                    attributes: {
+                        id: 0,
+                        gid: 0,
+                        x: 0,
+                        y: 0,
+                        db_creator: 'kaveh',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        x: 5,
+                        y: 5
+                    }
+                }];
+                break;
+            case 'line':
+                db_id = 1086;
+                data = [{
+                    attributes: {
+                        db_creator: 'kaveh',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        'paths': [
+                            [[40, 40], [20, 45], [45, 30]],
+                            [[20, 35], [10, 30], [10, 10], [30, 5], [45, 20]],
+                            [[30, 20], [20, 15], [20, 25]]
+                        ],
+                        'spatialReference': {'wkid': 4326}
+                    }
+                }];
+                break;
+            case 'polygon':
+                db_id = 1085;
+                data = [{
+                    attributes: {
+                        db_creator: 'kaveh',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        'rings': [
+                            [[-97.06138, 32.837], [-97.06133, 32.836], [-97.06124, 32.834], [-97.06127, 32.832], [-97.06138, 32.837]],
+                            [[-97.06326, 32.759], [-97.06298, 32.755], [-97.06153, 32.749], [-97.06326, 32.759]]
+                        ],
+                        'spatialReference': {'wkid': 4326}
+                    }
+                }];
+                break;
+        }
+
+        $.ajax({
+                    url: '/api/v1/featureservice/' + db_id + '/apply-edits',
+                    type: 'POST',
+                    data: {
+                        adds: JSON.stringify(data)
+                    },
+                    success: function (data, status, xhr) {
+                        console.log(data, status, xhr);
+                    }
+                }
+        )
+    }
+
+    function updateFeature(featureType) {
+        var data, db_id;
+
+        switch (featureType) {
+            case 'point':
+                db_id = 1081;
+                data = [{
+                    attributes: {
+                        db_id: 1,
+                        db_creator: 'kaveh',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        x: 50,
+                        y: 50,
+                        spatialReference: {wkid: 4326}
+                    }
+                }];
+                break;
+            case 'line':
+                db_id = 1086;
+                data = [{
+                    attributes: {
+                        db_id: 1,
+                        db_creator: 'kaveh',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        'paths': [
+                            [[40, 40], [20, 45], [45, 30]],
+                            [[30, 20], [20, 15], [20, 25]]
+                        ],
+                        'spatialReference': {'wkid': 4326}
+                    }
+                }];
+                break;
+            case 'polygon':
+                db_id = 1085;
+                data = [{
+                    attributes: {
+                        db_id: 3909,
+                        db_creator: 'kaveh.ka',
+                        db_created_date: new Date()
+                    },
+                    geometry: {
+                        rings: [
+                            [[5, 2], [6, 5], [2, 9], [-2, 5], [1, 2], [2, 3], [5, 2]],
+                            [[0, 0], [-5, 5], [0, 10], [5, 10], [10, 5], [5, 0], [0, 0]],
+                            [[1, 7], [3, 7], [3, 4], [1, 4], [1, 7]]
+                        ],
+                        'spatialReference': {'wkid': 4326}
+                    }
+                }];
+                break;
+        }
+
+        $.ajax({
+                    url: '/api/v1/featureservice/' + db_id + '/apply-edits',
+                    type: 'POST',
+                    data: {
+                        updates: JSON.stringify(data)
+                    },
+                    success: function (data, status, xhr) {
+                        console.log(data, status, xhr);
+                    }
+                }
+        )
+    }
+
+    a = {
+        'features': [{
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': [[[100, 0], [101, 0], [101, 1], [100, 1], [100, 0]], [[100.25, 0.25], [100.75, 0.25], [100.75, 0.75], [100.25, 0.75], [100.25, 0.25]]]
+            }, 'type': 'Feature', 'properties': {}
+        }], 'type': 'FeatureCollection'
+    }
+    d = {
+        'spatialReference': {'wkid': 4326},
+        'rings': [
+            [[0.5, 0.2], [0.6, 0.5], [0.2, 0.9], [-0.2, 0.5], [0.1, 0.2], [0.2, 0.3], [0.5, 0.2]],
+            [[0.0, 0.0], [-0.5, 0.5], [0.0, 1.0], [0.5, 1.0], [1.0, 0.5], [0.5, 0.0], [0.0, 0.0]],
+            [[0.1, 0.7], [0.3, 0.7], [0.3, 0.4], [0.1, 0.4], [0.1, 0.7]]
+        ]
+    };
+</script>

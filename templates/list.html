@@ -1,0 +1,9 @@
+<h1>Send to tablo</h1>
+<ul>
+    {% for f in files %}
+        <li>
+            {{ f.file.name }}
+            <a href="{% url 'tablo_admin_upload_by_url' %}?url=http://127.0.0.1:8090{% url 'file_handler:access' f.id %}">Send to Tablo</a>
+        </li>
+    {% endfor %}
+</ul>

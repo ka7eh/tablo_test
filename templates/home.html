@@ -1,0 +1,117 @@
+<div>
+    <h1>Files</h1>
+    <a href="{% url 'file_handler:import' %}">Upload</a>
+    <a href="{% url 'file_handler:list' %}">List</a>
+</div>
+
+<div>
+    <h1>Tablo</h1>
+    <ul>
+        <h2>Temporary Files</h2>
+        {% for tf in tablo_csv_files %}
+            <li>
+                <a href="{% url 'temporary_file_describe' 'v1' 'temporary-files' tf.uuid %}">{{ tf.filename }}</a>
+                <select>
+                    <option value="esriGeometryPoint">Point</option>
+                    <option value="esriGeometryPolyline">Line</option>
+                    <option value="esriGeometryPolygon">Polygon</option>
+                </select>
+                <button onclick="deploy(this, '{{ tf.uuid }}')">Deploy</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <ul>
+        <h2>Feature Services</h2>
+        {% for fs in featureServices %}
+            <li>
+            <a href="{% url 'map' fs.id %}" target="_blank">{{ fs.description|default:fs.id }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"
+        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+        crossorigin="anonymous"></script>
+<script>
+    $.ajaxSetup({
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'ApiKey kaveh:secret1234');
+        }
+    });
+
+    function deploy(el, uuid) {
+        var describeUrl = '/api/v1/temporary-files/{uuid}/describe/'.replace('{uuid}', uuid);
+        var geomType = $(el).parent().find('select').val();
+        var symbol;
+
+        switch(geomType){
+            case 'esriGeometryPoint':
+                symbol = {'type': 'esriSMS', 'style': 'esriSMSCircle', 'color': [255, 0, 0, 255], 'yoffset': 0, 'xoffset': 0, 'size': 5, 'angle': 0};
+                break;
+            case 'esriGeometryPolyline':
+                symbol = {'type':'esriSLS','style':'esriSLSSolid','color':[165,83,183,255],'width':1};
+                break;
+            case 'esriGeometryPolygon':
+                symbol = {'type':'esriSFS','style':'esriSFSSolid','color':[165,83,183,255],'outline':{'type':'esriSLS','style':'esriSLSSolid','color':[0,0,0,255],'width':4}};
+                break;
+        }
+
+        $.get(describeUrl, function (data) {
+            var datasetId = uuid.replace(/-/g, '_');
+            var deployUrl = '/api/v1/temporary-files/{uuid}/{dataset_id}/deploy/'.replace('{uuid}', uuid).replace('{dataset_id}', datasetId);
+            data['srid'] = 3857;
+            $.ajax({
+                url: deployUrl,
+                type: 'POST',
+                data: {
+                    csv_info: JSON.stringify(data),
+                    fields: '[]'
+                },
+                success: function (data) {/*
+                    var createFeatureServiceUrl = '/api/v1/featureservice/';
+                    $.ajax({
+                        url: createFeatureServiceUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            "description": "",
+                            "copyright_text": "",
+                            "spatial_reference": "{\"wkid\": 3857}",
+                            "units": "esriMeters",
+                            "allow_geometry_updates": false,
+                            "layers": [
+                                {
+                                    "layer_order": 0,
+                                    "table": data['table_name'],
+                                    "name": "layername",
+                                    "description": null,
+                                    "geometry_type": geomType,
+                                    "supports_time": false,
+                                    "start_time_field": null,
+                                    "time_interval": 0,
+                                    "time_interval_units": null,
+                                    "drawing_info": {
+                                        "renderer": {
+                                            "description": "",
+                                            "label": "",
+                                            "symbol": symbol,
+                                            "type": "simple"
+                                        }
+                                    }
+                                }
+                            ]
+                        }),
+                        success: function (data, status, xhr) {
+                            var location = xhr.getResponseHeader('Location');
+                            $.get(xhr.getResponseHeader('Location') + 'finalize', function () {
+                                console.log(location)
+                            });
+                        }
+                    })*/
+                }
+            })
+        });
+    }
+</script>
